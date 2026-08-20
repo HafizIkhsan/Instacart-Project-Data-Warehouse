@@ -1,4 +1,6 @@
 import sys
+
+from pathlib import Path
 from datetime import datetime
 
 import pendulum
@@ -15,14 +17,44 @@ import load
 
 POSTGRES_CONN_ID = 'instacart_postgres'
 
+KAGGLE_DATASET = "psparks/instacart-market-basket-analysis"
+folder_path = Path('/opt/airflow/data/raw')
+
 @dag(
     dag_id="instacart_data_warehouse",
-    schedule=None,
+    schedule="0 2 * * *",
     start_date=pendulum.datetime(2026, 8, 1, tz="Asia/Jakarta"),
     catchup=False,
     tags=["instacart", "data-engineering", "etl"], 
 )
 def instacart_data_warehouse():
+
+    @task
+    def download_data():
+        import kagglehub
+        import shutil
+
+        print(f"Downloading dataset {KAGGLE_DATASET} from Kaggle...")
+
+        download_path = kagglehub.dataset_download(
+            KAGGLE_DATASET
+        )
+
+        print(f"Dataset downloaded to: {download_path}")
+
+        folder_path.mkdir(parents=True, exist_ok=True)
+
+        source_path = Path(download_path)
+
+        for file in source_path.iterdir():
+            if file.is_file():
+                destination = folder_path / file.name
+
+                print(f"Moving file {file.name} to {destination}")
+
+                shutil.copy2(file, destination)
+
+        print("Data download and move completed successfully.")
 
     @task
     def ingest():
@@ -31,10 +63,6 @@ def instacart_data_warehouse():
         )
 
         engine = hook.get_sqlalchemy_engine()
-
-        from pathlib import Path
-
-        folder_path = Path('/opt/airflow/data/raw')
 
         for file in folder_path.iterdir():
             if file.is_file() and file.suffix == '.csv':
@@ -70,6 +98,6 @@ def instacart_data_warehouse():
         load.load_dim_order("dw", "dim_order", engine)
         load.load_fact_order_items("dw", "fact_order_items", engine)
 
-    ingest() >> transform_data() >> load_data()
+    download_data() >>ingest() >> transform_data() >> load_data()
 
 instacart_data_warehouse()
