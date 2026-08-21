@@ -75,16 +75,28 @@ Note: Since the Instacart dataset is static, the daily schedule is primarily use
 ### Prerequisites
 
 - Docker
-- Kaggle account + API credentials
+- Docker Compose (Postgres + Apache Airflow)
 
 ### Setup
 
-1. Clone repository.
-2. Provide environment variables in `.env`.
-3. Configure Kaggle credentials for the Airflow runtime.
-4. Start your environment (for example with Docker Compose, if used in your local setup).
-5. In Airflow, create PostgreSQL connection ID: `instacart_postgres`.
-6. Trigger DAG: `instacart_data_warehouse`.
+1. Clone repository. <br>
+   ```text
+   git clone https://github.com/HafizIkhsan/Instacart-Project-Data-Warehouse
+   cd Instacart-Project-Data-Warehouse
+   ```
+3. Create a .env file based on .env.example and fill in the required PostgreSQL configuration:
+   ```text
+   DB_HOST=
+   DB_NAME=
+   DB_USER=
+   DB_PASSWORD=
+   DB_PORT=
+   ```
+4. Start the Airflow and PostgreSQL services:
+   ```Docker-compose up -d```
+6. Open the Airflow UI and create a PostgreSQL connection with the following connection ID:
+   ```Instacart_postgres```
+8. Trigger the instacart_data_warehouse DAG manually, or wait for the scheduled execution.
 
 ## Expected Output
 
