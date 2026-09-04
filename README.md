@@ -106,6 +106,12 @@ A successful run should complete all tasks in order:
 
 After that, dimensional tables in schema `dw` are ready for analytics.
 
+📝 Medium Article The full process and story behind this project can be read on Medium:
+
+👉 [From Raw CSV to Data Warehouse: Building an End-to-End Data Engineering Pipeline with PostgreSQL, Docker, and Apache Airflow](https://medium.com/@HafizIkhsan/from-raw-csv-to-data-warehouse-building-an-end-to-end-data-engineering-pipeline-with-postgresql-c1bea0e206dd)
+
+Feel free to read it and leave any feedback or suggestions 🙌
+
 ## Disclaimer ⚠️
 
 This project was built as part of my learning journey in Data Engineering. It is continuously being improved as I explore new tools, best practices, and more advanced data engineering concepts.
