@@ -82,6 +82,8 @@ def instacart_data_warehouse():
         transform.create_table_products("staging", "products", engine)
         transform.create_table_orders("staging", "orders", engine)
         transform.create_table_order_products("staging", "order_products", engine)
+        transform.create_index_staging_tables("staging", "order_products", "product_id", engine)
+        transform.create_index_staging_tables("staging", "order_products", "order_id", engine)
 
         print("Transformation process completed successfully.")
 
@@ -95,7 +97,9 @@ def instacart_data_warehouse():
 
         load.truncate_dw(engine)
         load.load_dim_product("dw", "dim_product", engine)
+        load.create_index_dim_tables("dw", "dim_product", "product_id", engine)
         load.load_dim_order("dw", "dim_order", engine)
+        load.create_index_dim_tables("dw", "dim_order", "order_id", engine)
         load.load_fact_order_items("dw", "fact_order_items", engine)
 
     download_data() >>ingest() >> transform_data() >> load_data()

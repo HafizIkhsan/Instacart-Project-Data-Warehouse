@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS dw.orders (
+CREATE TABLE IF NOT EXISTS dw.dim_order (
     order_key BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     order_id INTEGER NOT NULL, 
     user_id INTEGER, 
@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS dw.orders (
     days_since_prior_order NUMERIC
 );
 
-CREATE TABLE IF NOT EXISTS dw.products (
+CREATE TABLE IF NOT EXISTS dw.dim_product (
     product_key BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     product_id INTEGER NOT NULL, 
     product_name TEXT, 
@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS dw.products (
     department TEXT
 )
 
-CREATE TABLE IF NOT EXISTS dw.order_items (
+CREATE TABLE IF NOT EXISTS dw.fact_order_items (
     order_item_key BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     order_key BIGINT NOT NULL, 
     product_key BIGINT NOT NULL, 
