@@ -16,20 +16,12 @@ CREATE TABLE IF NOT EXISTS dw.dim_product (
     aisle TEXT, 
     department_id INTEGER, 
     department TEXT
-)
+);
 
 CREATE TABLE IF NOT EXISTS dw.fact_order_items (
     order_item_key BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     order_key BIGINT NOT NULL, 
     product_key BIGINT NOT NULL, 
     add_to_cart_order INTEGER, 
-    reordered INTEGER,
-
-    CONSTRAINT fk_fact_order
-        FOREIGN KEY (order_key)
-        REFERENCES dw.orders (order_key),
-    
-    CONSTRAINT fk_fact_product
-        FOREIGN KEY (product_key)
-        REFERENCES dw.products (product_key)
-)
+    reordered INTEGER
+);

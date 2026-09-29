@@ -15,7 +15,7 @@ import ingestion
 import transform
 import load
 
-POSTGRES_CONN_ID = 'instacart_postgres'
+POSTGRES_CONN_ID = 'instacart_postgre'
 
 KAGGLE_DATASET = "psparks/instacart-market-basket-analysis"
 folder_path = Path('/opt/airflow/data/raw')
@@ -101,6 +101,10 @@ def instacart_data_warehouse():
         load.load_dim_order("dw", "dim_order", engine)
         load.create_index_dim_tables("dw", "dim_order", "order_id", engine)
         load.load_fact_order_items("dw", "fact_order_items", engine)
+        load.add_fk_constraints("dw", "dim_order", "order_key", engine)
+        load.validate_fk_constraints("dw", "dim_order", "order_key", engine)
+        load.add_fk_constraints("dw", "dim_product", "product_key", engine)
+        load.validate_fk_constraints("dw", "dim_product", "product_key", engine) 
 
     download_data() >>ingest() >> transform_data() >> load_data()
 

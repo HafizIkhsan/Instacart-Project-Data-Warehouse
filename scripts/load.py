@@ -74,6 +74,25 @@ def load_fact_order_items(schema, table_name, engine):
         connection.execute(text(query))
     print('Fact table loaded successfully.')
 
+def add_fk_constraints(schema, table_name, key, engine):
+    query = f"""ALTER TABLE {schema}.fact_order_items
+                ADD CONSTRAINT fk__{table_name}
+                FOREIGN KEY ({key})
+                REFERENCES {schema}.{table_name}({key})
+                NOT VALID;"""
+
+    with engine.begin() as connection:
+        connection.execute(text(query))
+    print(f"Foreign key constraint added to {schema}.fact_order_items referencing {schema}.{table_name}({key}).")
+
+def validate_fk_constraints(schema, table_name, key, engine):
+    query = f"""ALTER TABLE {schema}.fact_order_items
+                VALIDATE CONSTRAINT fk__{table_name};"""
+
+    with engine.begin() as connection:
+        connection.execute(text(query))
+    print(f"Foreign key constraint validated for {schema}.fact_order_items referencing {schema}.{table_name}({key}).")
+
 def create_index_dim_tables(schema, table_name, id_column, engine):
     query = f"""CREATE UNIQUE INDEX IF NOT EXISTS 
                 idx_dim_{table_name}_{id_column}
@@ -84,15 +103,3 @@ def create_index_dim_tables(schema, table_name, id_column, engine):
     with engine.begin() as connection:
         connection.execute(text(query))
         connection.execute(text(analyze_query))
-
-if __name__ == "__main__":
-    from connection import create_db_engine
-
-    engine = create_db_engine()
-
-    truncate_dw(engine)
-    load_dim_product("dw", "dim_product", engine)
-    create_index_dim_tables("dw", "dim_product", "product_id", engine)
-    load_dim_order("dw", "dim_order", engine)
-    create_index_dim_tables("dw", "dim_order", "order_id", engine)
-    load_fact_order_items("dw", "fact_order_items", engine)
