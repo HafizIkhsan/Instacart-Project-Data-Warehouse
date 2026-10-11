@@ -1,5 +1,5 @@
 import sys
-
+import logging
 from pathlib import Path
 from datetime import datetime
 
@@ -22,8 +22,8 @@ folder_path = Path('/opt/airflow/data/raw')
 
 @dag(
     dag_id="instacart_data_warehouse",
-    schedule="0 2 * * *",
-    start_date=pendulum.datetime(2026, 8, 1, tz="Asia/Jakarta"),
+    # schedule="0 2 * * *",
+    # start_date=pendulum.datetime(2026, 8, 1, tz="Asia/Jakarta"),
     catchup=False,
     tags=["instacart", "data-engineering", "etl"], 
 )
@@ -34,13 +34,13 @@ def instacart_data_warehouse():
         import kagglehub
         import shutil
 
-        print(f"Downloading dataset {KAGGLE_DATASET} from Kaggle...")
+        logging.info(f"Downloading dataset {KAGGLE_DATASET} from Kaggle...")
 
         download_path = kagglehub.dataset_download(
             KAGGLE_DATASET
         )
 
-        print(f"Dataset downloaded to: {download_path}")
+        logging.info(f"Dataset downloaded to: {download_path}")
 
         folder_path.mkdir(parents=True, exist_ok=True)
 
@@ -50,11 +50,11 @@ def instacart_data_warehouse():
             if file.is_file():
                 destination = folder_path / file.name
 
-                print(f"Moving file {file.name} to {destination}")
+                logging.info(f"Moving file {file.name} to {destination}")
 
                 shutil.copy2(file, destination)
 
-        print("Data download and move completed successfully.")
+        logging.info("Data download and move completed successfully.")
 
     @task
     def ingest():
@@ -68,7 +68,7 @@ def instacart_data_warehouse():
             if file.is_file() and file.suffix == '.csv':
                 ingestion.ingest_data_to_postgres(file, file.stem, 'raw', engine)
 
-        print("Data ingestion completed successfully.")
+        logging.info("Data ingestion completed successfully.")
 
     @task
     def transform_data():
@@ -82,10 +82,8 @@ def instacart_data_warehouse():
         transform.create_table_products("staging", "products", engine)
         transform.create_table_orders("staging", "orders", engine)
         transform.create_table_order_products("staging", "order_products", engine)
-        transform.create_index_staging_tables("staging", "order_products", "product_id", engine)
-        transform.create_index_staging_tables("staging", "order_products", "order_id", engine)
 
-        print("Transformation process completed successfully.")
+        logging.info("Transformation process completed successfully.")
 
     @task
     def load_data():
@@ -96,15 +94,16 @@ def instacart_data_warehouse():
         engine = hook.get_sqlalchemy_engine()
 
         load.truncate_dw(engine)
+        load.drop_constraint(engine)
         load.load_dim_product("dw", "dim_product", engine)
-        load.create_index_dim_tables("dw", "dim_product", "product_id", engine)
         load.load_dim_order("dw", "dim_order", engine)
-        load.create_index_dim_tables("dw", "dim_order", "order_id", engine)
         load.load_fact_order_items("dw", "fact_order_items", engine)
         load.add_fk_constraints("dw", "dim_order", "order_key", engine)
         load.validate_fk_constraints("dw", "dim_order", "order_key", engine)
         load.add_fk_constraints("dw", "dim_product", "product_key", engine)
         load.validate_fk_constraints("dw", "dim_product", "product_key", engine) 
+
+        logging.info("Data loading process completed successfully.")
 
     download_data() >>ingest() >> transform_data() >> load_data()
 

@@ -1,9 +1,12 @@
 from sqlalchemy import text
+import logging
 
 def create_schema(name,engine):
     query = f"CREATE SCHEMA IF NOT EXISTS {name};"
     with engine.begin() as connection:
         connection.execute(text(query))
+
+    logging.info(f"Schema {name} created successfully.")
 
 def create_table_products(schema, table_name, engine):
     query = f"""DROP TABLE IF EXISTS {schema}.{table_name};
@@ -23,6 +26,8 @@ def create_table_products(schema, table_name, engine):
     with engine.begin() as connection:
         connection.execute(text(query))
 
+    logging.info(f"Table {schema}.{table_name} created successfully.")
+
 def create_table_orders(schema, table_name, engine):
     query = f"""DROP TABLE IF EXISTS {schema}.{table_name};
                 CREATE TABLE {schema}.{table_name} AS 
@@ -36,6 +41,8 @@ def create_table_orders(schema, table_name, engine):
                 FROM raw.orders o;"""
     with engine.begin() as connection:
         connection.execute(text(query))
+
+    logging.info(f"Table {schema}.{table_name} created successfully.")
 
 def create_table_order_products(schema, table_name, engine):
     query = f"""DROP TABLE IF EXISTS {schema}.{table_name};
@@ -56,26 +63,4 @@ def create_table_order_products(schema, table_name, engine):
     with engine.begin() as connection:
         connection.execute(text(query))
 
-def create_index_staging_tables(schema, table_name, id_column, engine):
-    query = f"""CREATE INDEX IF NOT EXISTS 
-                idx_staging_{table_name}_{id_column}
-                ON {schema}.{table_name} ({id_column});"""
-    analyze_query = f"""
-        ANALYZE {schema}.{table_name};
-    """
-    with engine.begin() as connection:
-        connection.execute(text(query))
-        connection.execute(text(analyze_query))
-
-if __name__ == "__main__":
-    from connection import create_db_engine
-
-    engine = create_db_engine()
-
-    create_schema("staging", engine)
-    create_table_products("staging", "products", engine)
-    create_table_orders("staging", "orders", engine)
-    create_table_order_products("staging", "order_products", engine)
-    create_index_staging_tables("staging", "order_products", "product_id", engine)
-    create_index_staging_tables("staging", "order_products", "order_id", engine)
-    print("Transformation process completed successfully.")
+    logging.info(f"Table {schema}.{table_name} created successfully.")

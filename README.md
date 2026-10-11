@@ -84,7 +84,7 @@ Note: Since the Instacart dataset is static, the daily schedule is primarily use
    git clone https://github.com/HafizIkhsan/Instacart-Project-Data-Warehouse
    cd Instacart-Project-Data-Warehouse
    ```
-3. Create a .env file based on .env.example and fill in the required PostgreSQL configuration:
+2. Create a .env file based on .env.example and fill in the required PostgreSQL configuration:
    ```text
    DB_HOST=
    DB_NAME=
@@ -92,11 +92,11 @@ Note: Since the Instacart dataset is static, the daily schedule is primarily use
    DB_PASSWORD=
    DB_PORT=
    ```
-4. Start the Airflow and PostgreSQL services:
-   ```Docker-compose up -d```
-6. Open the Airflow UI and create a PostgreSQL connection with the following connection ID:
-   ```Instacart_postgres```
-8. Trigger the instacart_data_warehouse DAG manually, or wait for the scheduled execution.
+3. Start the Airflow and PostgreSQL services:
+   `Docker-compose up -d`
+4. Open the Airflow UI and create a PostgreSQL connection with the following connection ID:
+   `Instacart_postgre`
+5. Trigger the instacart_data_warehouse DAG manually, or wait for the scheduled execution.
 
 ## Expected Output
 
@@ -108,7 +108,8 @@ After that, dimensional tables in schema `dw` are ready for analytics.
 
 <hr>
 
-### 📝 Medium Article 
+### 📝 Medium Article
+
 The full process and story behind this project can be read on Medium:
 
 👉 [From Raw CSV to Data Warehouse: Building an End-to-End Data Engineering Pipeline with PostgreSQL, Docker, and Apache Airflow](https://medium.com/@HafizIkhsan/from-raw-csv-to-data-warehouse-building-an-end-to-end-data-engineering-pipeline-with-postgresql-c1bea0e206dd)

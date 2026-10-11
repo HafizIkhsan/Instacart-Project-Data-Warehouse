@@ -1,5 +1,6 @@
 import pandas as pd
 from pathlib import Path
+import logging
 
 def ingest_data_to_postgres(file_path, table_name, schema_name, engine):
     df = pd.read_csv(file_path, nrows=1000)
@@ -24,25 +25,11 @@ def ingest_data_to_postgres(file_path, table_name, schema_name, engine):
                 cur.copy_expert(f"COPY {schema_name}.{table_name} FROM STDIN WITH CSV", f)
 
         raw_conn.commit()
-        print(f"Data ingestion to {table_name} completed successfully.")
+        logging.info(f"Data ingestion to {table_name} completed successfully.")
 
     except Exception as e:
         raw_conn.rollback()
-        print(f"Error occurred while ingesting data to {table_name}: {e}")
+        logging.error(f"Error occurred while ingesting data to {table_name}: {e}")
 
     finally:
         raw_conn.close()
-
-if __name__ == "__main__":
-    from connection import create_db_engine
-
-    engine = create_db_engine()
-
-    folder_path = Path('data/raw')
-
-    for file in folder_path.iterdir():
-        if file.is_file() and file.suffix == '.csv':
-            ingest_data_to_postgres(file, 
-                                    file.stem, 
-                                    'raw',
-                                    engine)

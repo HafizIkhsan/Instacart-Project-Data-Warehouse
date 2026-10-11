@@ -1,4 +1,18 @@
 from sqlalchemy import text
+import logging
+
+def drop_constraint(engine):
+    query = """
+    ALTER TABLE dw.fact_order_items
+    DROP CONSTRAINT IF EXISTS fk_dim_order;
+    ALTER TABLE dw.fact_order_items
+    DROP CONSTRAINT IF EXISTS fk_dim_product;
+    """
+
+    with engine.begin() as connection:
+        connection.execute(text(query))
+
+    logging.info("Foreign key constraints dropped from fact_order_items.")
 
 def truncate_dw(engine):
     query = """
@@ -12,7 +26,7 @@ def truncate_dw(engine):
     with engine.begin() as connection:
         connection.execute(text(query))
 
-    print("DW tables truncated.")
+    logging.info("Data warehouse tables truncated successfully.")
 
 def load_dim_product(schema, table_name, engine):
     query = f"""INSERT INTO {schema}.{table_name} (
@@ -32,7 +46,8 @@ def load_dim_product(schema, table_name, engine):
                 FROM staging.products;"""
     with engine.begin() as connection:
         connection.execute(text(query))
-    print('Dimensional product table loaded successfully.')
+
+    logging.info("Dimensional product table loaded successfully.")
 
 def load_dim_order(schema, table_name, engine):
     query = f"""INSERT INTO {schema}.{table_name} (
@@ -52,7 +67,8 @@ def load_dim_order(schema, table_name, engine):
                 FROM staging.orders;"""
     with engine.begin() as connection:
         connection.execute(text(query))
-    print('Dimensional order table loaded successfully.')
+
+    logging.info("Dimensional order table loaded successfully.")
 
 def load_fact_order_items(schema, table_name, engine):
     query = f"""INSERT INTO {schema}.{table_name} (
@@ -72,34 +88,24 @@ def load_fact_order_items(schema, table_name, engine):
                     ON op.order_id = o.order_id;"""
     with engine.begin() as connection:
         connection.execute(text(query))
-    print('Fact table loaded successfully.')
+
+    logging.info("Fact table loaded successfully.")
 
 def add_fk_constraints(schema, table_name, key, engine):
     query = f"""ALTER TABLE {schema}.fact_order_items
-                ADD CONSTRAINT fk__{table_name}
+                ADD CONSTRAINT fk_{table_name}
                 FOREIGN KEY ({key})
                 REFERENCES {schema}.{table_name}({key})
                 NOT VALID;"""
 
     with engine.begin() as connection:
         connection.execute(text(query))
-    print(f"Foreign key constraint added to {schema}.fact_order_items referencing {schema}.{table_name}({key}).")
+    logging.info(f"Foreign key constraint added to {schema}.fact_order_items referencing {schema}.{table_name}({key}).")
 
 def validate_fk_constraints(schema, table_name, key, engine):
     query = f"""ALTER TABLE {schema}.fact_order_items
-                VALIDATE CONSTRAINT fk__{table_name};"""
+                VALIDATE CONSTRAINT fk_{table_name};"""
 
     with engine.begin() as connection:
         connection.execute(text(query))
-    print(f"Foreign key constraint validated for {schema}.fact_order_items referencing {schema}.{table_name}({key}).")
-
-def create_index_dim_tables(schema, table_name, id_column, engine):
-    query = f"""CREATE UNIQUE INDEX IF NOT EXISTS 
-                idx_dim_{table_name}_{id_column}
-                ON {schema}.{table_name} ({id_column});"""
-    analyze_query = f"""
-        ANALYZE {schema}.{table_name};
-    """
-    with engine.begin() as connection:
-        connection.execute(text(query))
-        connection.execute(text(analyze_query))
+    logging.info(f"Foreign key constraint validated for {schema}.fact_order_items referencing {schema}.{table_name}({key}).")
