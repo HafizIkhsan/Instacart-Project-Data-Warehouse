@@ -34,7 +34,7 @@ x-airflow-common:
 services:
   postgres:
     image: postgres:16
-    container_name: airflow-postgres
+    container_name: airflow-postgres-instacart
     environment:
       POSTGRES_USER: airflow
       POSTGRES_PASSWORD: airflow
@@ -50,7 +50,7 @@ services:
 
   airflow-apiserver:
     <<: *airflow-common
-    container_name: airflow-apiserver
+    container_name: airflow-apiserver-instacart
     command: api-server
     ports:
       - "8080:8080"
@@ -68,7 +68,7 @@ services:
 
   airflow-scheduler:
     <<: *airflow-common
-    container_name: airflow-scheduler
+    container_name: airflow-scheduler-instacart
     command: scheduler
     healthcheck:
       test: ["CMD-SHELL", 'airflow jobs check --job-type SchedulerJob --hostname "$${HOSTNAME}"']
@@ -84,7 +84,7 @@ services:
 
   airflow-dag-processor:
     <<: *airflow-common
-    container_name: airflow-dag-processor
+    container_name: airflow-dag-processor-instacart
     command: dag-processor
     healthcheck:
       test: ["CMD-SHELL", 'airflow jobs check --job-type DagProcessorJob --hostname "$${HOSTNAME}"']
@@ -100,7 +100,7 @@ services:
 
   airflow-init:
     <<: *airflow-common
-    container_name: airflow-init
+    container_name: airflow-init-instacart
     entrypoint: /bin/bash
     command:
       - -c

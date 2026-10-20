@@ -1,8 +1,8 @@
 import sys
 import logging
 from pathlib import Path
-from datetime import datetime
 
+from datetime import datetime
 import pendulum
 
 from airflow.sdk import dag, task
@@ -11,9 +11,10 @@ from airflow.providers.postgres.hooks.postgres import PostgresHook
 sys.path.insert(0, 
                 '/opt/airflow/scripts')
 
-import ingestion
+import extract
+import load_raw
 import transform
-import load
+import load_dwh
 
 POSTGRES_CONN_ID = 'instacart_postgre'
 
@@ -30,34 +31,11 @@ folder_path = Path('/opt/airflow/data/raw')
 def instacart_data_warehouse():
 
     @task
-    def download_data():
-        import kagglehub
-        import shutil
-
-        logging.info(f"Downloading dataset {KAGGLE_DATASET} from Kaggle...")
-
-        download_path = kagglehub.dataset_download(
-            KAGGLE_DATASET
-        )
-
-        logging.info(f"Dataset downloaded to: {download_path}")
-
-        folder_path.mkdir(parents=True, exist_ok=True)
-
-        source_path = Path(download_path)
-
-        for file in source_path.iterdir():
-            if file.is_file():
-                destination = folder_path / file.name
-
-                logging.info(f"Moving file {file.name} to {destination}")
-
-                shutil.copy2(file, destination)
-
-        logging.info("Data download and move completed successfully.")
+    def extract_data():
+        extract_data(KAGGLE_DATASET, folder_path)
 
     @task
-    def ingest():
+    def ingest_to_postgres():
         hook = PostgresHook(
             postgres_conn_id=POSTGRES_CONN_ID
         )
@@ -66,7 +44,7 @@ def instacart_data_warehouse():
 
         for file in folder_path.iterdir():
             if file.is_file() and file.suffix == '.csv':
-                ingestion.ingest_data_to_postgres(file, file.stem, 'raw', engine)
+                load_raw.load_raw_to_postgres(file, file.stem, 'raw', engine)
 
         logging.info("Data ingestion completed successfully.")
 
@@ -86,25 +64,25 @@ def instacart_data_warehouse():
         logging.info("Transformation process completed successfully.")
 
     @task
-    def load_data():
+    def staging_to_dwh():
         hook = PostgresHook(
             postgres_conn_id=POSTGRES_CONN_ID
         )
 
         engine = hook.get_sqlalchemy_engine()
 
-        load.truncate_dw(engine)
-        load.drop_constraint(engine)
-        load.load_dim_product("dw", "dim_product", engine)
-        load.load_dim_order("dw", "dim_order", engine)
-        load.load_fact_order_items("dw", "fact_order_items", engine)
-        load.add_fk_constraints("dw", "dim_order", "order_key", engine)
-        load.validate_fk_constraints("dw", "dim_order", "order_key", engine)
-        load.add_fk_constraints("dw", "dim_product", "product_key", engine)
-        load.validate_fk_constraints("dw", "dim_product", "product_key", engine) 
+        load_dwh.truncate_dw(engine)
+        load_dwh.drop_constraint(engine)
+        load_dwh.load_dim_product("dw", "dim_product", engine)
+        load_dwh.load_dim_order("dw", "dim_order", engine)
+        load_dwh.load_fact_order_items("dw", "fact_order_items", engine)
+        load_dwh.add_fk_constraints("dw", "dim_order", "order_key", engine)
+        load_dwh.validate_fk_constraints("dw", "dim_order", "order_key", engine)
+        load_dwh.add_fk_constraints("dw", "dim_product", "product_key", engine)
+        load_dwh.validate_fk_constraints("dw", "dim_product", "product_key", engine) 
 
         logging.info("Data loading process completed successfully.")
 
-    download_data() >>ingest() >> transform_data() >> load_data()
+    extract_data() >> ingest_to_postgres() >> transform_data() >> staging_to_dwh()
 
 instacart_data_warehouse()

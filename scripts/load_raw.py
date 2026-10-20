@@ -2,12 +2,12 @@ import pandas as pd
 from pathlib import Path
 import logging
 
-def ingest_data_to_postgres(file_path, table_name, schema_name, engine):
+def load_raw_to_postgres(file_path, table_name, schema_name, engine):
     df = pd.read_csv(file_path, nrows=1000)
 
     df_empty = df.head(0)
 
-    print(f"Ingesting data from {file_path} to {table_name}.")
+    print(f"Loading data from {file_path} to {table_name}.")
 
     df_empty.to_sql(
         table_name,
@@ -21,7 +21,7 @@ def ingest_data_to_postgres(file_path, table_name, schema_name, engine):
     try:
         with raw_conn.cursor() as cur:
             with open(file_path, 'r') as f:
-                next(f)  # Skip the header row
+                next(f) 
                 cur.copy_expert(f"COPY {schema_name}.{table_name} FROM STDIN WITH CSV", f)
 
         raw_conn.commit()

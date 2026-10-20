@@ -1,5 +1,9 @@
+import logging
+
 from connection import conn
 import pandas as pd
+
+logging.basicConfig(level=logging.INFO)
 
 tables = [
     "aisles",
@@ -16,13 +20,14 @@ def get_column_names(schema, table):
                 WHERE table_schema = '{schema}'
                 AND table_name = '{table}';"""
     df = pd.read_sql(query, conn)
+    logging.info(f"Column names for {schema}.{table}: {df['column_name'].tolist()}")
     return df['column_name'].tolist()
 
 def check_row_counts(table):
     for table in tables:
         query = f"SELECT COUNT(*) AS row_count FROM raw.{table};"
         df = pd.read_sql(query, conn)
-        print(f"Table: {table}, Rows: {df['row_count'].iloc[0]}")
+        logging.info(f"Table: {table}, Rows: {df['row_count'].iloc[0]}")
 
 def check_null(schema, table):
     column_names = get_column_names(schema, table)
@@ -32,7 +37,7 @@ def check_null(schema, table):
                     COUNT (*) FILTER (WHERE {column} IS NULL) AS {column}_null 
                     FROM {schema}.{table};"""
         df = pd.read_sql(query, conn)
-        print(f"Table:{table}, Column: {column}, Total Rows: {df['total_rows'].iloc[0]}, Null Count: {df[f'{column}_null'].iloc[0]}")
+        logging.info(f"Table:{table}, Column: {column}, Total Rows: {df['total_rows'].iloc[0]}, Null Count: {df[f'{column}_null'].iloc[0]}")
     
 def check_duplicates(schema, table):
     column_names = get_column_names(schema, table)
@@ -43,7 +48,7 @@ def check_duplicates(schema, table):
                     COUNT (*) - COUNT (DISTINCT {column}) AS duplicate_count
                     FROM {schema}.{table};"""
         df = pd.read_sql(query, conn)
-        print(f"Table:{table}, Column: {column}, Total Rows: {df['total_rows'].iloc[0]}, Distinct Count: {df['distinct_count'].iloc[0]}, Duplicate Count: {df['duplicate_count'].iloc[0]}")
+        logging.info(f"Table:{table}, Column: {column}, Total Rows: {df['total_rows'].iloc[0]}, Distinct Count: {df['distinct_count'].iloc[0]}, Duplicate Count: {df['duplicate_count'].iloc[0]}")
 
 def check_relationship(schema, table1, table2, column1, column2):
     query = f"""SELECT 
@@ -55,7 +60,7 @@ def check_relationship(schema, table1, table2, column1, column2):
                 FULL OUTER JOIN {schema}.{table2}
                 ON {table1}.{column1} = {table2}.{column2};"""
     df = pd.read_sql(query, conn)
-    print(f"Relationship between {table1}.{column1} and {table2}.{column2}: Total Rows: {df['total_rows'].iloc[0]}, Matching Rows: {df['matching_rows'].iloc[0]}, Missing in {table2}: {df[f'missing_in_{table2}'].iloc[0]}, Missing in {table1}: {df[f'missing_in_{table1}'].iloc[0]}")
+    logging.info(f"Relationship between {table1}.{column1} and {table2}.{column2}: Total Rows: {df['total_rows'].iloc[0]}, Matching Rows: {df['matching_rows'].iloc[0]}, Missing in {table2}: {df[f'missing_in_{table2}'].iloc[0]}, Missing in {table1}: {df[f'missing_in_{table1}'].iloc[0]}")
 
 def check_prior_train(schema, table1, table2):
     column_names1 = get_column_names(schema, table1)
@@ -68,8 +73,8 @@ def check_prior_train(schema, table1, table2):
                 COUNT(*) AS total_rows
                 FROM {schema}.{table2};"""
     df = pd.read_sql(query, conn)
-    for index, row in df.iterrows():
-        print(f"Source: {row['source']}, Total Rows: {row['total_rows']}, Column Names: {column_names1 if row['source'] == 'prior' else column_names2}")  
+    for row in df.iterrows():
+        logging.info(f"Source: {row['source']}, Total Rows: {row['total_rows']}, Column Names: {column_names1 if row['source'] == 'prior' else column_names2}")  
 
 if __name__ == "__main__":
     check_row_counts('raw')
