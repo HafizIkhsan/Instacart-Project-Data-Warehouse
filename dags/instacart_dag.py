@@ -11,10 +11,10 @@ from airflow.providers.postgres.hooks.postgres import PostgresHook
 sys.path.insert(0, 
                 '/opt/airflow/scripts')
 
-import extract
+from extract import extract_data as download_data
 import load_raw
 import transform
-import load_dwh
+import staging_to_dwh 
 
 POSTGRES_CONN_ID = 'instacart_postgre'
 
@@ -31,11 +31,12 @@ folder_path = Path('/opt/airflow/data/raw')
 def instacart_data_warehouse():
 
     @task
-    def extract_data():
-        extract_data(KAGGLE_DATASET, folder_path)
+    def extract():
+        download_data(KAGGLE_DATASET, folder_path)
+
 
     @task
-    def ingest_to_postgres():
+    def load_to_postgre():
         hook = PostgresHook(
             postgres_conn_id=POSTGRES_CONN_ID
         )
@@ -64,25 +65,25 @@ def instacart_data_warehouse():
         logging.info("Transformation process completed successfully.")
 
     @task
-    def staging_to_dwh():
+    def load_to_dwh():
         hook = PostgresHook(
             postgres_conn_id=POSTGRES_CONN_ID
         )
 
         engine = hook.get_sqlalchemy_engine()
 
-        load_dwh.truncate_dw(engine)
-        load_dwh.drop_constraint(engine)
-        load_dwh.load_dim_product("dw", "dim_product", engine)
-        load_dwh.load_dim_order("dw", "dim_order", engine)
-        load_dwh.load_fact_order_items("dw", "fact_order_items", engine)
-        load_dwh.add_fk_constraints("dw", "dim_order", "order_key", engine)
-        load_dwh.validate_fk_constraints("dw", "dim_order", "order_key", engine)
-        load_dwh.add_fk_constraints("dw", "dim_product", "product_key", engine)
-        load_dwh.validate_fk_constraints("dw", "dim_product", "product_key", engine) 
+        staging_to_dwh.truncate_dw(engine)
+        staging_to_dwh.drop_constraint(engine)
+        staging_to_dwh.load_dim_product("dw", "dim_product", engine)
+        staging_to_dwh.load_dim_order("dw", "dim_order", engine)
+        staging_to_dwh.load_fact_order_items("dw", "fact_order_items", engine)
+        staging_to_dwh.add_fk_constraints("dw", "dim_order", "order_key", engine)
+        staging_to_dwh.validate_fk_constraints("dw", "dim_order", "order_key", engine)
+        staging_to_dwh.add_fk_constraints("dw", "dim_product", "product_key", engine)
+        staging_to_dwh.validate_fk_constraints("dw", "dim_product", "product_key", engine) 
 
         logging.info("Data loading process completed successfully.")
 
-    extract_data() >> ingest_to_postgres() >> transform_data() >> staging_to_dwh()
+    extract() >> load_to_postgre() >> transform_data() >> load_to_dwh()
 
 instacart_data_warehouse()
